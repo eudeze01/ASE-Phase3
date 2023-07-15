@@ -1,1 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cab Me</title>
+    <!-- Loding Application JS -->
+    <!-- <script type="module" src="/js/initmaps.js"></script> -->
+    <script type="module" src="/js/notuber.js"></script>
 
+    <link rel="stylesheet" type="text/css" href="../static/css/main.css" />
+    <link rel="stylesheet" type="text/css" href="/css/main.css" />
+
+    <!-- Bootstrap -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3"
+      crossorigin="anonymous"
+    />
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p"
+      crossorigin="anonymous"
+    ></script>
+  </head>
+  <body>
+    <div id="GMap" class="GMap"></div>
+
+    <div id="ui" class="border p-3 bg-white col-2 vh-100 overflow-scroll">
+      <div class="p-3 ps-0">
+        <h1 class="fs-3">Hello, {{current_user.name}}</h1>
+        <a href="/logout">Logout <i class="bi bi-box-arrow-right ms-1"></i></a>
+        <span class="ms-1 me-1">●</span>
+        <a id="prev_journeys" href="#">Previous Journeys <i class="bi bi-list-check ms-1"></i></a>
+      </div>
+
+      <!-- UI elements -->
+      <div id="ui_controls">
+        <!-- Input for start -->
+        <label for="inputGrp_start" class="form-label mb-0">Start</label>
+        <div id="inputGrp_start" class="input-group mb-1">
+          <input
+            id="input_start"
+            class="form-control"
+            list="start-data-list"
+            autocomplete="off"
+          />
+          <span class="input-group-btn">
+            <button id="btn_select_map_start" class="btn btn-outline-dark">
+              <i class="bi bi-pin-map-fill"></i>
+            </button>
+          </span>
+          <datalist id="start-data-list">
+            <option value="Test Address 1"></option>
+            <option value="Test Address 2"></option>
+            <option value="Test Address 3"></option>
+          </datalist>
+        </div>
+
+        <!-- Input for destination -->
+        <label for="" class="form-label mb-0">Destination</label>
+        <div id="inputGrp_destination" class="input-group mb-1">
+          <input
+            id="input_destination"
+            class="form-control"
+            list="dest-data-list"
+            autocomplete="off"
+          />
+          <span class="input-group-btn">
+            <button
+              id="btn_select_map_destination"
+              class="btn btn-outline-dark"
+            >
+              <i class="bi bi-pin-map-fill"></i>
+            </button>
+          </span>
+          <datalist id="dest-data-list">
+            <option value="Test Address 1"></option>
+            <option value="Test Address 2"></option>
+            <option value="Test Address 3"></option>
+          </datalist>
+        </div>
+
+        <!-- Input for Vehicle Type -->
+        <fieldset>
+          <legend class="fs-6">Type</legend>
+          <div class="d-flex gap-4 justify-content-center">
+            <div class="form-check">
+              <input
+                id="type_car"
+                class="form-check-input"
+                type="radio"
+                name="type"
+                value="Car"
+                checked
+              />
+              <label class="form-check-label" for="type_car"> Car </label>
+            </div>
+            <div class="form-check">
+              <input
+                id="type_van"
+                class="form-check-input"
+                type="radio"
+                name="type"
+                value="Van"
+              />
+              <label class="form-check-label" for="type_van"> Van </label>
+            </div>
+            <div class="form-check">
+              <input
+                id="type_mini_bus"
+                class="form-check-input"
+                type="radio"
+                name="type"
+                value="Mini Bus"
+              />
+              <label class="form-check-label" for="type_mini_bus">
+                Mini Bus
+              </label>
+            </div>
+          </div>
+        </fieldset>
+
+        <div class="d-grid">
+          <button
+            id="book_vehicle"
+            class="btn btn-outline-primary mb-2 mt-3"
+            type="submit"
+          >
+            Book A Vehicle
+          </button>
+        </div>
+
+      </div>
+
+      
+      <!-- Selected Route Info -->
+      <div
+        id="route_details"
+        class="border d-flex p-2 justify-content-around d-none"
+      >
+        <p class="mb-0 fw-light">
+          Distance: <span id="distance" class="d-block fw-bold">5.3 Km</span>
+        </p>
+        <p class="mb-0 fw-light">
+          Fair: <span id="fair" class="d-block fw-bold"> 23 {{"&#163"}} </span>
+        </p>
+      </div>
+
+      <!-- Result Display -->
+      <div
+        id="confirm_info"
+        class="border border-success rounded-3 mt-4 p-3 d-none"
+      >
+        <h2 id="booking_title" class="fs-5 mb-3">
+          Booking Confirmed
+          <i class="bi bi-check-circle-fill ms-2 text-success"></i>
+        </h2>
+        <div class="border d-flex flex-column gap-1 flex-wrap">
+          <div class="p-3 border-bottom">
+            <label class="">Vehicle Plate/Details</label>
+            <div class="info_strip d-flex flex-column">
+              <span id="vehicle_id">LC07 UMA</span>
+              <span id="model" class="">Nissan Townstar</span>
+              <span id="type" class="">Van</span>
+            </div>
+          </div>
+          <div class="ps-3 border-bottom">
+            <label class="">Driver </label>
+            <div class="info_strip">
+              <span id="driver">John Smith</span>
+              <div id="rating" class="text-primary d-inline-block  text-right fw-normal me-3">
+                <i class="bi bi-star mx-2"></i>
+                <span class="float-end">0.6</span>
+              </div>
+            </div>
+          </div>
+          <div class="ps-3">
+            <label class="">Time to arrive</label>
+            <div id="time_to_arrive" class="info_strip">lkajsdf</div>
+          </div>
+        </div>
+
+        <div class="d-grid mt-3">
+          <button id="start_journey" class="btn btn-dark">Start Journey</button>
+        </div>
+      </div>
+
+      <div id="rating_view" class="border rounded-3 mt-4 p-3 d-none">
+        <h2 class="fs-5 mb-3">Driver Rating</h2>
+        <p class="text-center">Thank you for using CabMe. Please take a minute to rate your journey</p>
+        <div id="rating_stars" class="d-flex flex-row-reverse justify-content-center gap-3">
+          <i class="bi bi-star"></i>
+          <i class="bi bi-star"></i>
+          <i class="bi bi-star"></i>
+          <i class="bi bi-star"></i>
+          <i class="bi bi-star"></i>
+        </div>
+
+        <div class="d-flex justify-content-center gap-2 mt-3">
+          <button id="cancel_rating" class="btn btn-outline-dark">Cancel</button>
+          <button id="submit_rating" class="btn btn-dark">Submit</button>
+        </div>
+      </div>
+
+      <!-- Error Modal -->
+      <div
+        class="modal fade"
+        id="errorModal"
+        tabindex="-1"
+        aria-labelledby="errorModal"
+        aria-hidden="true"
+      >
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="exampleModalLabel">Modal title</h5>
+              <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="modal"
+                aria-label="Close"
+              ></button>
+            </div>
+            <div class="modal-body">...</div>
+            <div class="modal-footer">
+              <button
+                type="button"
+                class="btn btn-danger"
+                data-bs-dismiss="modal"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="modal fade"
+        id="prev_journey"
+        tabindex="-1"
+        aria-labelledby="previous_journeys"
+        aria-hidden="true"
+        aria-modal="true"
+      >
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-xl">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="pj_modal_title">Previous Journeys</h5>
+              <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="modal"
+                aria-label="Close"
+              ></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <th>Id</th>
+                  <th>Type</th>
+                  <th>Plate</th>
+                  <th>Driver</th>
+                  <th>Start</th>
+                  <th>End</th>
+                  <th>Rating</th>
+                </thead>
+                <tbody id="pj_t_body">
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+              <button
+                type="button"
+                class="btn btn-dark"
+                data-bs-dismiss="modal"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+    </div>
+  </body>
+</html>
