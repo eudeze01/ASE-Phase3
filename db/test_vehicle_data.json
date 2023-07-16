@@ -1,0 +1,66 @@
+{
+  "vehicles": [
+    {
+      "id": "mXfkjrFw",
+      "plate": "LD07 BWJ",
+      "driver_name": "Riley Walker",
+      "model": "Ford Fiesta",
+      "type": "Car"
+    },
+    {
+      "id": "nZXB8ZHz",
+      "plate": "LD03 RYO",
+      "driver_name": "Jorge Nelson",
+      "model": "Volkswagen Polo",
+      "type": "Car"
+    },
+    {
+      "id": "Tkwu74WC",
+      "plate": "LE03 EPX",
+      "driver_name": "Gilbert Morgan",
+      "model": "Vauxhall Astra",
+      "type": "Car"
+    },
+    {
+      "id": "5KWpnAJN",
+      "plate": "LC07 UMA",
+      "driver_name": "Ivan Cooper",
+      "model": "Nissan Townstar",
+      "type": "Van"
+    },
+    {
+      "id": "uf5ZrXYw",
+      "plate": "LB02 AOH",
+      "driver_name": "Jorge Scott",
+      "model": "Mercedes Citan",
+      "type": "Van"
+    },
+    {
+      "id": "VMerzMH8",
+      "plate": "LD03 IHU",
+      "driver_name": "Dan Howard",
+      "model": "Peugeot",
+      "type": "Mini Bus"
+    },
+    {
+      "id": "8efT67Xd",
+      "plate": "LE03 ADB",
+      "driver_name": "Ivan Scott",
+      "model": "Renault",
+      "type": "Mini Bus"
+    }
+  ],
+  "vehicle_positions": [
+    { "id": "mXfkjrFw", "lat": 51.5090562, "lng": -0.1304571 },
+    { "id": "nZXB8ZHz", "lat": 51.5080898, "lng": -0.07620836346036469 },
+    { "id": "Tkwu74WC", "lat": 51.5425649, "lng": -0.00693080308689057 },
+    {
+      "id": "5KWpnAJN",
+      "lat": 51.519821199999996,
+      "lng": -0.09397523701275332
+    },
+    { "id": "uf5ZrXYw", "lat": 51.5133798, "lng": -0.0889552 },
+    { "id": "VMerzMH8", "lat": 51.5253378, "lng": -0.033435 },
+    { "id": "8efT67Xd", "lat": 51.54458615, "lng": -0.0161905117168855 }
+  ]
+}
