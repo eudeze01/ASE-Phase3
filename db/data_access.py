@@ -4,12 +4,18 @@ import json;
 from werkzeug.security import check_password_hash
 
 class User:
-    def __init__(self, id,  email, password, name, auth = False, ) -> None:
+    def __init__(self, id,  email, password, name, auth = False, acc_type=None, vehicle_id=None) -> None:
         self.id = email
         self.password = password
         self.auth = auth
         self.name = name
         self.dbid = id
+
+        if acc_type=="driver" and vehicle_id is None:
+            raise Exception("If account type is driver, a valid vehicle id should be provided")
+
+        self.type = acc_type
+        self.vehicle_id=vehicle_id
 
     def is_authenticated(self):
         return self.auth
@@ -75,16 +81,21 @@ class SQLiteConnection:
                 id          INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                 email       UNIQUE,
                 name        TEXT NOT NULL,
-                password    TEXT NOT NULL
+                password    TEXT NOT NULL,
+                type        TEXT NOT NULL DEFAULT "user",
+                vehicle_id  TEXT
             )
         """
 
         cursor.execute(create_user_table_sql);
 
-        cursor.execute('''INSERT OR IGNORE INTO User(email, name, password) 
-                        VALUES ('{0}', '{1}', '{2}') '''.format(def_user.id, 
+        # Insert a default user;
+        cursor.execute('''INSERT OR IGNORE INTO User(email, name, password, type, vehicle_id) 
+                        VALUES ('{0}', '{1}', '{2}','{3}', '{4}') '''.format(def_user.id, 
                                                               def_user.name, 
-                                                              def_user.password))
+                                                              def_user.password,
+                                                              def_user.type,
+                                                              def_user.vehicle_id))
         print("\t** Created Table User")
         
         #Creating Bookings Table
@@ -105,6 +116,7 @@ class SQLiteConnection:
                 rating          INTEGER DEFAULT 0,
                 start_time      TIMESTAMP DEFAULT (DATETIME('now')),
                 end_time      TIMESTAMP DEFAULT (DATETIME('now')),
+                fair            Real DEFAULT 0,
                 FOREIGN KEY(user_id) REFERENCES User(id)
             )
         """
@@ -147,7 +159,7 @@ class SQLiteConnection:
         sql = '''SELECT vp.*, v.*, avg(b.rating) as avg_rating 
                 FROM VehiclePosition vp 
                 JOIN Vehicle v on vp.id=v.id 
-                LEFT JOIN booking b on vp.id=b.vehicle_id 
+                LEFT JOIN booking b on vp.id=b.vehicle_id AND b.ended=1
                 WHERE vp.id='{0}' GROUP BY v.id'''.format(id)
         
         cursor = self.con.cursor()
@@ -191,7 +203,6 @@ class SQLiteConnection:
         sql = '''SELECT b.id as 'b_id', b.vehicle_id, start_x, start_y, end_x, b.started, b.ended, end_y
                  FROM Booking b  WHERE user_id = {0}
                   AND b.ended = 0 '''.format(u_id)
-        print(sql);
         cursor = self._read(sql);
         cursor.row_factory = self._dict_factory
         data = cursor.fetchone()
@@ -213,11 +224,11 @@ class SQLiteConnection:
         self.con.commit()
         cursor.close();
     
-    def endJourneyForUser(self, u_id):
+    def endJourneyForUser(self, u_id, fair=0):
         booking = self.getBookingForUser(u_id)
         sql = '''UPDATE Booking 
-                SET ended=1, end_time=DATETIME('now')
-                WHERE id = '{0}' AND started=1 '''.format(booking['b_id'])
+                SET ended=1, end_time=DATETIME('now'), fair='{1}'
+                WHERE id = '{0}' AND started=1 '''.format(booking['b_id'], fair)
         cursor = self.con.cursor();
         cursor.execute(sql);
         self.con.commit()
@@ -227,7 +238,6 @@ class SQLiteConnection:
         sql1 = "SELECT id from Booking WHERE user_id='{0}' ORDER BY end_time DESC LIMIT 1".format(u_id)
         booking = self.con.execute(sql1).fetchone();
         sql = "UPDATE Booking SET rating={1} WHERE id='{0}'".format(booking[0], rating)
-        print(sql)
         cursor = self.con.cursor()
         cursor.execute(sql)
         self.con.commit()
@@ -244,6 +254,7 @@ class SQLiteConnection:
 
         cursor.execute(sql)
         self.con.commit()
+        cursor.close()
 
     def updateVehiclePosition(self, vehicle_id, lat, lng):
         sql2 = '''UPDATE VehiclePosition SET lat='{0}', lng='{1}' WHERE id='{2}'  '''.format(lat, lng, vehicle_id)
@@ -262,8 +273,49 @@ class SQLiteConnection:
         data = cursor.fetchall();
         cursor.close();
         return data;
-       
+    
+    # Drivers journey history
+    def getDriverJourneyHistory(self, driver_db_id):
+        sql = '''SELECT b.id, b.rating, b.start_time, b.end_time, b.fair 
+                FROM Booking b JOIN user u ON b.vehicle_id=u.vehicle_id 
+                WHERE u.id={0} order by b.end_time desc'''.format(driver_db_id);
 
+        cursor = self.con.cursor();
+        cursor.execute(sql);
+        cursor.row_factory = self._dict_factory;
+        data = cursor.fetchall()
+        cursor.close()
+        return data
+
+    #For Admin User
+    def getAllDriverDetails(self):
+        # pass
+        sql = ''' SELECT v.*, u.name, u.email FROM Vehicle v 
+                    LEFT JOIN User u on v.id=u.vehicle_id'''
+        
+        cursor = self.con.cursor();
+        cursor.execute(sql);
+        cursor.row_factory = self._dict_factory;
+        data = cursor.fetchall();
+        cursor.close()
+        return data;
+
+    def getAllJouneys(self):
+        sql = '''SELECT b.start_time, b.end_time, b.fair, b.rating,
+                    v.id as 'v_id', v.plate, driver_name
+                     FROM Booking b 
+                    JOIN Vehicle v on b.vehicle_id=v.id
+                    WHERE b.ended = 1 ORDER BY b.end_time DESC'''
+        
+        cursor = self.con.cursor();
+        cursor.execute(sql);
+        cursor.row_factory = self._dict_factory;
+        data = cursor.fetchall();
+        cursor.close();
+        return data;
+        
+
+    #Common
     def getUser(self, email, pw=""):
         sql = "SELECT * FROM User Where email='{0}'".format(email)
         cursor = self.con.cursor()
@@ -277,9 +329,9 @@ class SQLiteConnection:
 
         # auth = pw_hash==data['password']
         auth = check_password_hash(data['password'], pw)
-        return User(data['id'],email, data['password'], data['name'], auth)
+        return User(data['id'],email, data['password'], data['name'], auth, data["type"], data["vehicle_id"])
     
-                
+    
 
 #Testing
 if __name__ == '__main__':
@@ -292,4 +344,3 @@ if __name__ == '__main__':
 
 
     
-
