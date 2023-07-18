@@ -1,11 +1,4 @@
-from flask import (Flask, 
-                   render_template, 
-                   jsonify, 
-                   request, 
-                   redirect, 
-                   url_for, 
-                   flash,
-                   make_response)
+from flask import (Flask, render_template, jsonify, request, redirect, url_for, flash, make_response)
 from werkzeug.exceptions import BadRequest
 from werkzeug.security import generate_password_hash
 from flask_login import LoginManager, login_required, login_user, logout_user, current_user
